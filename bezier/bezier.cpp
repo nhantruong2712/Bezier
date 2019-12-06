@@ -1,4 +1,3 @@
-﻿
 #define TESTMODE
 #include "BezierCurveReconstruction.h"
 #include <stdio.h>
@@ -6,7 +5,7 @@
 #include <math.h>
 #include <fstream>
 typedef Point2* BezierCurve;
-#define MAXPOINTS	1000		/* The most points you can have */
+#define MAXPOINTS	1000		/* The most points you can have */ // số điểm tối đa mà bạn có thể có
 
 
 void DrawBezierCurve(int n, BezierCurve bcurve)
@@ -22,7 +21,7 @@ void DrawBezierCurve(int n, BezierCurve bcurve)
 
 /*
  *  B0, B1, B2, B3 :
- *	Bezier multipliers
+ *	Bezier multipliers  //bội số Bezier
  */
 static double B0(double	u)
 {
@@ -67,14 +66,14 @@ static Vector2 V2SubII(Vector2 a, Vector2 b) {
 	return (c);
 }
 
-/* return the distance between two points */
+/* return the distance between two points */ // trả về khoảng cách giữa 2 điểm
 double V2DistanceBetween2Points(Point2* a, Point2* b) {
 	double dx = a->x - b->x;
 	double dy = a->y - b->y;
 	return(sqrt((dx * dx) + (dy * dy)));
 }
 
-/* negates the input vector and returns it */
+/* negates the input vector and returns it */ // phủ định vector đầu vào và trả về nó
 Vector2* V2Negate(Vector2* v) {
 	v->x = -v->x;  v->y = -v->y;
 	return(v);
@@ -85,54 +84,61 @@ double V2SquaredLength(Vector2* a) {
 }
 
 
-/* returns length of input vector */
+/* returns length of input vector */ //trả về độ dài của đầu vào vector
 double V2Length(Vector2* a) {
 	return(sqrt(V2SquaredLength(a)));
 }
 
-/* normalizes the input vector and returns it */
+/* normalizes the input vector and returns it */ // bình thường hoá đầu vào vector và trả về nó
 Vector2* V2Normalize(Vector2* v) {
 	double len = V2Length(v);
 	if (len != 0.0) { v->x /= len;  v->y /= len; }
 	return(v);
 }
 
-/* scales the input vector to the new length and returns it */
-Vector2* V2Scale(Vector2* v, double newlen) {
+/* scales the input vector to the new length and returns it */ // chia tỉ lệ vector đầu vào sang chiều dài mới và trả về nó
+Vector2* V2Scale(Vector2* v, double newlen)
+{
 	double len = V2Length(v);
-	if (len != 0.0) { v->x *= newlen / len;   v->y *= newlen / len; }
-	return(v);
+	if (len != 0.0)
+	{
+		v->x *= newlen / len;
+		v->y *= newlen / len;
+	}
+	return (v);
 }
 
-/* return vector sum c = a+b */
-Vector2* V2Add(Vector2* a, Vector2* b, Vector2* c) {
-	c->x = a->x + b->x;  c->y = a->y + b->y;
-	return(c);
+/* return vector sum c = a+b */ // trả về vector tổng c = a+b
+Vector2* V2Add(Vector2* a, Vector2* b, Vector2* c)
+{
+	c->x = a->x + b->x;
+	c->y = a->y + b->y;
+	return (c);
 }
 
-/* return vector difference c = a-b */
-Vector2* V2Sub(Vector2* a, Vector2* b, Vector2* c) {
-	c->x = a->x - b->x;  c->y = a->y - b->y;
-	return(c);
+/* return vector difference c = a-b */ // trả về sự khác biệt vector c = a-b
+Vector2* V2Sub(Vector2* a, Vector2* b, Vector2* c)
+{
+	c->x = a->x - b->x;
+	c->y = a->y - b->y;
+	return (c);
 }
 
-/* return the dot product of vectors a and b */
-double V2Dot(Vector2* a, Vector2* b) {
-	return((a->x * b->x) + (a->y * b->y));
+/* return the dot product of vectors a and b */ // trả về sản phẩm chấm của vectơ a và b
+double V2Dot(Vector2* a, Vector2* b)
+{
+	return ((a->x * b->x) + (a->y * b->y));
 }
-
-
-
 
 /*
- *  ChordLengthParameterize :
- *  Assign parameter values to digitized points
- *  using relative distances between points.
+ *  ChordLengthParameterize : // độ dài hợp âm tham số hóa
+ *  Assign parameter values to digitized points  // Gán các giá trị tham số cho các điểm được
+ *  using relative distances between points. // số hóa bằng khoảng cách tương đối giữa các điểm
  */
 static double* ChordLengthParameterize(Point2* d, int first, int last)
 {
 	int     i;
-	double* u;         /*  Parameterization        */
+	double* u;         /*  Parameterization        */ // tham số hoá
 
 	u = (double*)malloc((unsigned)(last - first + 1) * sizeof(double));
 
@@ -152,36 +158,36 @@ static double* ChordLengthParameterize(Point2* d, int first, int last)
 
 
 /*
- *  GenerateBezier :
+ *  GenerateBezier : // tạo Bezier
  *  Use least-squares method to find Bezier control points for region.
- *
+ *  sử dụng phương pháp bình phương nhỏ nhất để tìm các điểm kiểm soát Bezier cho khu vực.
  */
-static BezierCurve  GenerateBezier(
-	Point2* d,			/*  Array of digitized points	*/
-	int		first, int last,		/*  Indices defining region	*/
-	double* uPrime,		/*  Parameter values for region */
-	Vector2	tHat1, Vector2 tHat2)	/*  Unit tangents at endpoints	*/
+static BezierCurve GenerateBezier(
+	Point2* d, /*  Array of digitized points	*/                     // Mảng các điểm số hóa
+	int first, int last, /*  Indices defining region	*/             // Chỉ số xác định vùng
+	double* uPrime, /*  Parameter values for region */                 // Giá trị tham số cho vùng
+	Vector2 tHat1, Vector2 tHat2) /*  Unit tangents at endpoints	*/ // Tiếp tuyến đơn vị tại các điểm cuối
 {
-	int 	i;
-	Vector2 	A[MAXPOINTS][2];	/* Precomputed rhs for eqn	*/
-	int 	nPts;			/* Number of pts in sub-curve */
-	double 	C[2][2];			/* Matrix C		*/
-	double 	X[2];			/* Matrix X			*/
-	double 	det_C0_C1,		/* Determinants of matrices	*/
+	int i;
+	Vector2 A[MAXPOINTS][2]; /* Precomputed rhs for eqn	*/ // ??
+	int nPts; /* Number of pts in sub-curve */             // Số lượng điểm trong đường cong phụ
+	double C[2][2]; /* Matrix C		*/                     // Ma trận C
+	double X[2]; /* Matrix X			*/                 // Ma trận X
+	double det_C0_C1, /* Determinants of matrices	*/     // Các yếu tố quyết định của ma trận
 		det_C0_X,
 		det_X_C1;
-	double 	alpha_l,		/* Alpha values, left and right	*/
+	double alpha_l, /* Alpha values, left and right	*/ // Giá trị Alpha, trái và phải
 		alpha_r;
-	Vector2 	tmp;			/* Utility variable		*/
-	BezierCurve	bezCurve;	/* RETURN bezier curve ctl pts	*/
+	Vector2 tmp; /* Utility variable		*/                 // Biến tiện ích
+	BezierCurve bezCurve; /* RETURN bezier curve ctl pts	*/ // trả vở đường cong Bezier ctl pts
 
 	bezCurve = (Point2*)malloc(4 * sizeof(Point2));
 	nPts = last - first + 1;
 
-
-	/* Compute the A's	*/
-	for (i = 0; i < nPts; i++) {
-		Vector2		v1, v2;
+	/* Compute the A's	*/ // Tính toán A's
+	for (i = 0; i < nPts; i++)
+	{
+		Vector2 v1, v2;
 		v1 = tHat1;
 		v2 = tHat2;
 		V2Scale(&v1, B1(uPrime[i]));
@@ -190,7 +196,7 @@ static BezierCurve  GenerateBezier(
 		A[i][1] = v2;
 	}
 
-	/* Create the C and X matrices	*/
+	/* Create the C and X matrices	*/ // Tạo ma trận C và X
 	C[0][0] = 0.0;
 	C[0][1] = 0.0;
 	C[1][0] = 0.0;
@@ -198,7 +204,8 @@ static BezierCurve  GenerateBezier(
 	X[0] = 0.0;
 	X[1] = 0.0;
 
-	for (i = 0; i < nPts; i++) {
+	for (i = 0; i < nPts; i++)
+	{
 		C[0][0] += V2Dot(&A[i][0], &A[i][0]);
 		C[0][1] += V2Dot(&A[i][0], &A[i][1]);
 		/*					C[1][0] += V2Dot(&A[i][0], &A[i][1]);*/
@@ -214,29 +221,32 @@ static BezierCurve  GenerateBezier(
 						V2ScaleIII(d[last], B2(uPrime[i])),
 						V2ScaleIII(d[last], B3(uPrime[i]))))));
 
-
 		X[0] += V2Dot(&A[i][0], &tmp);
 		X[1] += V2Dot(&A[i][1], &tmp);
 	}
 
-	/* Compute the determinants of C and X	*/
+	/* Compute the determinants of C and X	*/ // Tính các yếu tố quyết định của ma trận C và X
 	det_C0_C1 = C[0][0] * C[1][1] - C[1][0] * C[0][1];
 	det_C0_X = C[0][0] * X[1] - C[0][1] * X[0];
 	det_X_C1 = X[0] * C[1][1] - X[1] * C[0][1];
 
-	/* Finally, derive alpha values	*/
-	if (det_C0_C1 == 0.0) {
+	/* Finally, derive alpha values	*/ // Cuối cùng, lấy giá trị alpha
+	if (det_C0_C1 == 0.0)
+	{
 		det_C0_C1 = (C[0][0] * C[1][1]) * 10e-12;
 	}
 	alpha_l = det_X_C1 / det_C0_C1;
 	alpha_r = det_C0_X / det_C0_C1;
 
-
 	/*  If alpha negative, use the Wu/Barsky heuristic (see text) */
+	// Nếu alpha âm, sử dụng Wu/Barsky heuristic
 	/* (if alpha is 0, you get coincident control points that lead to
-	 * divide by zero in any subsequent NewtonRaphsonRootFind() call. */
-	if (alpha_l < 1.0e-6 || alpha_r < 1.0e-6) {
-		double	dist = V2DistanceBetween2Points(&d[last], &d[first]) /
+	* divide by zero in any subsequent NewtonRaphsonRootFind() call. */
+	// Nếu alpha = 0, bạn nhận được các điểm kiểm soát trùng khớp dẫn đến
+	// chia cho 0 trong bất kỳ lệnh gọi NewtonRaphsonRootFind () tiếp theo nào
+	if (alpha_l < 1.0e-6 || alpha_r < 1.0e-6)
+	{
+		double dist = V2DistanceBetween2Points(&d[last], &d[first]) /
 			3.0;
 
 		bezCurve[0] = d[first];
@@ -250,6 +260,9 @@ static BezierCurve  GenerateBezier(
 	/*  positioned exactly at the first and last data points */
 	/*  Control points 1 and 2 are positioned an alpha distance out */
 	/*  on the tangent vectors, left and right, respectively */
+	// Điểm kiểm soát đầu tiên và cuối cùng của đường cong Bezier được định vị
+	// chính xác tại các điểm dữ liệu đầu tiên và cuối cùng
+	//  Điểm kiểm soát 1 và 2 được định vị một khoảng cách alpha trên các vectơ tiếp tuyến, trái và phải, tương ứng
 	bezCurve[0] = d[first];
 	bezCurve[3] = d[last];
 	V2Add(&bezCurve[0], V2Scale(&tHat1, alpha_l), &bezCurve[1]);
@@ -260,27 +273,29 @@ static BezierCurve  GenerateBezier(
 /*
  *  Bezier :
  *  	Evaluate a Bezier curve at a particular parameter value
- *
+ *      Đánh giá đường cong Bezier tại một giá trị tham số cụ thể
  */
 static Point2 BezierII(
-	int		degree,		/* The degree of the bezier curve	*/
-	Point2* V,		/* Array of control points		*/
-	double 	t)		/* Parametric value to find point for	*/
+	int degree, /* The degree of the bezier curve	*/ //Độ của đường cong bezier
+	Point2* V, /* Array of control points		*/     // Mảng các điểm kiểm soát
+	double t) /* Parametric value to find point for	*/ //Giá trị tham số để tìm điểm cho
 {
-	int 	i, j;
-	Point2 	Q;	        /* Point on curve at parameter t	*/
-	Point2* Vtemp;		/* Local copy of control points		*/
+	int i, j;
+	Point2 Q; /* Point on curve at parameter t	*/         //Điểm trên đường cong tại tham số t
+	Point2* Vtemp; /* Local copy of control points		*/ //Bản sao các điểm kiểm soát
 
-	/* Copy array	*/
-	Vtemp = (Point2*)malloc((unsigned)((degree + 1)
-		* sizeof(Point2)));
-	for (i = 0; i <= degree; i++) {
+	/* Copy array	*/ // Sao chép mảng
+	Vtemp = (Point2*)malloc((unsigned)((degree + 1) * sizeof(Point2)));
+	for (i = 0; i <= degree; i++)
+	{
 		Vtemp[i] = V[i];
 	}
 
-	/* Triangle computation	*/
-	for (i = 1; i <= degree; i++) {
-		for (j = 0; j <= degree - i; j++) {
+	/* Triangle computation	*/ //Tam giác tính toán
+	for (i = 1; i <= degree; i++)
+	{
+		for (j = 0; j <= degree - i; j++)
+		{
 			Vtemp[j].x = (1.0 - t) * Vtemp[j].x + t * Vtemp[j + 1].x;
 			Vtemp[j].y = (1.0 - t) * Vtemp[j].y + t * Vtemp[j + 1].y;
 		}
@@ -291,25 +306,24 @@ static Point2 BezierII(
 	return Q;
 }
 
-
-
 /*
- *  ComputeMaxError :
- *	Find the maximum squared distance of digitized points
- *	to fitted curve.
-*/
+ * ComputeLeftTangent, ComputeRightTangent, ComputeCenterTangent : tính toán tiếp tuyến trái, tính toán tiếp tuyến phải
+ tính toán tiếp tuyến giữa
+ *Approximate unit tangents at endpoints and "center" of digitized curve
+ Các tiếp tuyến đơn vị gần đúng tại các điểm cuối và "tâm" của đường cong số hóa
+ */
 static double ComputeMaxError(
-	Point2* d,			/*  Array of digitized points	*/
-	int		first, int last,		/*  Indices defining region	*/
-	BezierCurve	bezCurve,		/*  Fitted Bezier curve		*/
-	double* u,			/*  Parameterization of points	*/
-	int* splitPoint)		/*  Point of maximum error	*/
+	Point2* d,			/*  Array of digitized points	*/ // Mảng các điểm số hóa
+	int		first, int last,		/*  Indices defining region	*/ // Chỉ số xác định vùng
+	BezierCurve	bezCurve,		/*  Fitted Bezier curve		*/ //Đường cong Bezier được trang bị
+	double* u,			/*  Parameterization of points	*/ //Tham số hóa điểm
+	int* splitPoint)		/*  Point of maximum error	*/ // Điểm sai số tối đa
 {
 	int		i;
-	double	maxDist;		/*  Maximum error		*/
-	double	dist;		/*  Current error		*/
-	Point2	P;			/*  Point on curve		*/
-	Vector2	v;			/*  Vector from point to curve	*/
+	double	maxDist;		/*  Maximum error		*/ // Lỗi tối đa
+	double	dist;		/*  Current error		*/ // Lỗi hiện tại
+	Point2	P;			/*  Point on curve		*/ // Điểm trên đường cong
+	Vector2	v;			/*  Vector from point to curve	*/ // Vector từ điểm đến đường cong
 
 	*splitPoint = (last - first + 1) / 2;
 	maxDist = 0.0;
