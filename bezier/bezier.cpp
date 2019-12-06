@@ -571,22 +571,21 @@ các điểm và đường cong được trang bị), thuật toán sẽ tạo r
  (các đối số lần lượt là độ và các điểm kiểm soát). Người dùng sẽ phải tự thực hiện chức năng này đầu ra ascii, v.v.
  *
  */
-void input() {
-	fstream f;
-	f.open("D:/do an/code doancoso/input.txt");
-	f >> n;
-	for (int i = 0; i < n; i++)
-		for (int j = 0; j < n; j++)
-		{
-			f >> a[i][j];
-			if (a[i][j] == 0 || i == j) a[i][j] = INFINITY;
-		}
-	f.close();
-}
+//void input() {
+//	fstream f;
+//	f.open("D:/do an/code doancoso/input.txt");
+//	f >> n;
+//	for (int i = 0; i < n; i++)
+//		for (int j = 0; j < n; j++)
+//		{
+//			f >> a[i][j];
+//			if (a[i][j] == 0 || i == j) a[i][j] = INFINITY;
+//		}
+//	f.close();
+//}
 int main()
 {
-	static Point2 d
-		/*    {	/*  Digitized points  : tập hợp điểm*/
+	static Point2 d[7]=	{/*    {	  Digitized points  : tập hợp điểm*/
 	{ 0.0, 0.0 },
 	{ 0.0, 0.5 },
 	{ 1.1, 1.4 },
@@ -594,8 +593,7 @@ int main()
 	{ 3.2, 1.1 },
 	{ 4.0, 0.2 },
 	{ 4.0, 0.0 },
-}; */
-input(d);
+}; 
 	double	error = 4.0;		/*  Squared error : lỗi bình phương*/
 	FitCurve(d, 7, error);		/*  Fit the Bezier curves :khớp với đường cong bezier */
 }
