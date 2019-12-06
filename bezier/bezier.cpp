@@ -1,11 +1,10 @@
-
+﻿
 #define TESTMODE
-#include "BezierCurveReconstruction.h"					
+#include "BezierCurveReconstruction.h"
 #include <stdio.h>
 #include <malloc.h>
 #include <math.h>
-#include <iostream>
-
+#include <fstream>
 typedef Point2* BezierCurve;
 #define MAXPOINTS	1000		/* The most points you can have */
 
@@ -328,40 +327,41 @@ static double ComputeMaxError(
 
 
 /*
- *  NewtonRaphsonRootFind :
- *	Use Newton-Raphson iteration to find better root.
+ *  NewtonRaphsonRootFind : công cụ newton-raph  cho việc tìm kiếm căn số
+ *	Use Newton-Raphson iteration to find better root. : sử dụng công cụ đó lặp đi lặp lặp lại
+	để tìm căn số tốt hơn
  */
 static double NewtonRaphsonRootFind(
-	BezierCurve	Q,			/*  Current fitted curve	*/
-	Point2 		P,		/*  Digitized point		*/
-	double 		u)		/*  Parameter value for "P"	*/
+	BezierCurve	Q,			/*  Current fitted curve: đường cong thích hợp hiện tại	*/
+	Point2 		P,		/*  Digitized point	: điểm số 2	*/
+	double 		u)		/*  Parameter value for "P" : giá trị tham số cho P	*/
 {
 	double 		numerator, denominator;
-	Point2 		Q1[3], Q2[2];	/*  Q' and Q''			*/
-	Point2		Q_u, Q1_u, Q2_u; /*u evaluated at Q, Q', & Q''	*/
+	Point2 		Q1[3], Q2[2];	/*  Q' and Q'':	Q và Q'		*/
+	Point2		Q_u, Q1_u, Q2_u; /*u evaluated at: u được xac định tại điểm Q, Q', & Q''	*/
 	double 		uPrime;		/*  Improved u			*/
 	int 		i;
 
-	/* Compute Q(u)	*/
+	/* Compute Q(u)	: tính toán Q(u)*/
 	Q_u = BezierII(3, Q, u);
 
-	/* Generate control vertices for Q'	*/
+	/* Generate control vertices for Q' : tạo các đỉnh điều khiển cho Q'	*/
 	for (i = 0; i <= 2; i++) {
 		Q1[i].x = (Q[i + 1].x - Q[i].x) * 3.0;
 		Q1[i].y = (Q[i + 1].y - Q[i].y) * 3.0;
 	}
 
-	/* Generate control vertices for Q'' */
+	/* Generate control vertices for Q'' :tạo các đỉnh điều khiển cho Q'' */
 	for (i = 0; i <= 1; i++) {
 		Q2[i].x = (Q1[i + 1].x - Q1[i].x) * 2.0;
 		Q2[i].y = (Q1[i + 1].y - Q1[i].y) * 2.0;
 	}
 
-	/* Compute Q'(u) and Q''(u)	*/
+	/* Compute Q'(u) and Q''(u)	: tính toán Q'(U) và U'' (u)*/
 	Q1_u = BezierII(2, Q1, u);
 	Q2_u = BezierII(1, Q2, u);
 
-	/* Compute f(u)/f'(u) */
+	/* Compute f(u)/f'(u) : tính toán F(u) và / f(U)' */
 	numerator = (Q_u.x - P.x) * (Q1_u.x) + (Q_u.y - P.y) * (Q1_u.y);
 	denominator = (Q1_u.x) * (Q1_u.x) + (Q1_u.y) * (Q1_u.y) +
 		(Q_u.x - P.x) * (Q2_u.x) + (Q_u.y - P.y) * (Q2_u.y);
@@ -374,20 +374,20 @@ static double NewtonRaphsonRootFind(
 
 
 /*
- *  Reparameterize:
- *	Given set of points and their parameterization, try to find
+ *  Reparameterize: xác định lại tham số
+ *	Given set of points and their parameterization, try to find: tập hợp các điểm và tham số của chúng, cố gắng tìm một tham số chính xác hơn
  *   a better parameterization.
  *
  */
 static double* Reparameterize(
-	Point2* d,			/*  Array of digitized points	*/
-	int		first, int last,		/*  Indices defining region	*/
-	double* u,			/*  Current parameter values	*/
-	BezierCurve	bezCurve)	/*  Current fitted curve	*/
+	Point2* d,			/*  Array of digitized points : mảng các điểm số hoá	*/
+	int		first, int last,		/*  Indices defining region	: chỉ số xác định vùng*/
+	double* u,			/*  Current parameter values : giá trị tham số hiện tại	*/
+	BezierCurve	bezCurve)	/*  Current fitted curve : đường cong thích hợp hiện tại	*/
 {
 	int 	nPts = last - first + 1;
 	int 	i;
-	double* uPrime;		/*  New parameter values	*/
+	double* uPrime;		/*  New parameter values: giá trị tham só mới 	*/
 
 	uPrime = (double*)malloc(nPts * sizeof(double));
 	for (i = first; i <= last; i++) {
@@ -403,12 +403,14 @@ static double* Reparameterize(
 
 
 /*
- * ComputeLeftTangent, ComputeRightTangent, ComputeCenterTangent :
+ * ComputeLeftTangent, ComputeRightTangent, ComputeCenterTangent : tính toán tiếp tuyến trái, tính toán tiếp tuyến phải
+ tính toán tiếp tuyến giữa
  *Approximate unit tangents at endpoints and "center" of digitized curve
+ Các tiếp tuyến đơn vị gần đúng tại các điểm cuối và "tâm" của đường cong số hóa
  */
 static Vector2 ComputeLeftTangent(
-	Point2* d,		/*  Digitized points*/
-	int		end)		/*  Index to "left" end of region */
+	Point2* d,		/*  Digitized points : điểm tham số hoá*/
+	int		end)		/*  Index to "left" end of region :Chỉ mục đến "bên trái" vùng cuối */
 {
 	Vector2	tHat1;
 	tHat1 = V2SubII(d[end + 1], d[end]);
@@ -417,8 +419,8 @@ static Vector2 ComputeLeftTangent(
 }
 
 static Vector2 ComputeRightTangent(
-	Point2* d,		/*  Digitized points		*/
-	int		end)		/*  Index to "right" end of region */
+	Point2* d,		/*  Digitized points	: điểm số hoá	*/
+	int		end)		/*  Index to "right" end of region : chỉ mục đến "bên phải"  vùng cuối */
 {
 	Vector2	tHat2;
 	tHat2 = V2SubII(d[end - 1], d[end]);
@@ -428,8 +430,8 @@ static Vector2 ComputeRightTangent(
 
 
 static Vector2 ComputeCenterTangent(
-	Point2* d,		/*  Digitized points			*/
-	int		center)		/*  Index to point inside region	*/
+	Point2* d,		/*  Digitized points	: điểm số hoá		*/
+	int		center)		/*  Index to point inside region	Chỉ mục để chỉ trong khu vực */
 {
 	Vector2	V1, V2, tHatCenter;
 
@@ -445,7 +447,7 @@ static Vector2 ComputeCenterTangent(
 
 /*
  *  FitCubic :
- *  	Fit a Bezier curve to a (sub)set of digitized points
+ *  	Fit a Bezier curve to a (sub)set of digitized points :Khớp đường cong Bezier với tập hợp (phụ) các điểm được số hóa
  */
 static void FitCubic(
 	Point2* d,			/*  Array of digitized points */
@@ -454,20 +456,20 @@ static void FitCubic(
 	double	error)		/*  User-defined error squared	   */
 {
 	BezierCurve	bezCurve; /*Control points of fitted Bezier curve*/
-	double* u;		/*  Parameter values for point  */
-	double* uPrime;	/*  Improved parameter values */
-	double	maxError;	/*  Maximum fitting error	 */
-	int		splitPoint;	/*  Point to split point set at	 */
-	int		nPts;		/*  Number of points in subset  */
-	double	iterationError; /*Error below which you try iterating  */
-	int		maxIterations = 4; /*  Max times to try iterating  */
-	Vector2	tHatCenter;   	/* Unit tangent vector at splitPoint */
+	double* u;		/*  Parameter values for point :Giá trị tham số cho điểm */
+	double* uPrime;	/*  Improved parameter values : Cải thiện giá trị tham số */
+	double	maxError;	/*  Maximum fitting error : Lỗi sắp đăt tối đa	 */
+	int		splitPoint;	/*  Point to split point set at	: Điểm để chia điểm được đặt tại */
+	int		nPts;		/*  Number of points in subset : Số điểm trong tập hợp con */
+	double	iterationError; /*Error below which you try iterating :Lỗi bên dưới mà bạn thử lặp lại */
+	int		maxIterations = 4; /*  Max times to try iterating :Số lần tối đa để thử lặp */
+	Vector2	tHatCenter;   	/* Unit tangent vector at splitPoint :Đơn vị vectơ tiếp tuyến tại điểm phân chia*/
 	int		i;
 
 	iterationError = error * error;
 	nPts = last - first + 1;
 
-	/*  Use heuristic if region only has two points in it */
+	/*  Use heuristic if region only has two points in it :Sử dụng heuristic nếu khu vực chỉ có hai điểm trong đó */
 	if (nPts == 2) {
 		double dist = V2DistanceBetween2Points(&d[last], &d[first]) / 3.0;
 
@@ -481,11 +483,11 @@ static void FitCubic(
 		return;
 	}
 
-	/*  Parameterize points, and attempt to fit curve */
+	/*  Parameterize points, and attempt to fit curve :Tham số hóa các điểm và cố gắng khớp đường cong */
 	u = ChordLengthParameterize(d, first, last);
 	bezCurve = GenerateBezier(d, first, last, u, tHat1, tHat2);
 
-	/*  Find max deviation of points to fitted curve */
+	/*  Find max deviation of points to fitted curve :Tìm độ lệch tối đa của các điểm đối với đường cong được trang bị */
 	maxError = ComputeMaxError(d, first, last, bezCurve, u, &splitPoint);
 	if (maxError < error) {
 		DrawBezierCurve(3, bezCurve);
@@ -495,8 +497,8 @@ static void FitCubic(
 	}
 
 
-	/*  If error not too large, try some reparameterization  */
-	/*  and iteration */
+	/*  If error not too large, try some reparameterization :Nếu lỗi không quá lớn, hãy thử một số tham số lại */
+	/*  and iteration  :và lặp đi lặp lại*/
 	if (maxError < iterationError) {
 		for (i = 0; i < maxIterations; i++) {
 			uPrime = Reparameterize(d, first, last, u, bezCurve);
@@ -514,7 +516,7 @@ static void FitCubic(
 		}
 	}
 
-	/* Fitting failed -- split at max error point and fit recursively */
+	/* Fitting failed -- split at max error point and fit recursively: sắp đặt thất bại - phân chia tại điểm lỗi tối đa và khớp đệ quy*/
 	free((void*)u);
 	free((void*)bezCurve);
 	tHatCenter = ComputeCenterTangent(d, splitPoint);
@@ -532,14 +534,14 @@ static void FitCubic(
 
 /*
  *  FitCurve :
- *  	Fit a Bezier curve to a set of digitized points
+ *  	Fit a Bezier curve to a set of digitized points :Khớp đường cong Bezier với tập hợp các điểm được số hóa
  */
 void FitCurve(
-	Point2* d,			/*  Array of digitized points	*/
-	int		nPts,		/*  Number of digitized points	*/
-	double	error)		/*  User-defined error squared	*/
+	Point2* d,			/*  Array of digitized points : mảng của điểm 	*/
+	int		nPts,		/*  Number of digitized points	: Số điểm được số hóa*/
+	double	error)		/*  User-defined error squared	: Bình phương lỗi do người dùng xác định*/
 {
-	Vector2	tHat1, tHat2;	/*  Unit tangent vectors at endpoints */
+	Vector2	tHat1, tHat2;	/*  Unit tangent vectors at endpoints :Các vectơ tiếp tuyến đơn vị tại các điểm cuối */
 
 	tHat1 = ComputeLeftTangent(d, 0);
 	tHat2 = ComputeRightTangent(d, nPts - 1);
@@ -558,16 +560,33 @@ int n;
  *   of points and a tolerance (squared error between points and
  *	fitted curve), the algorithm will generate a piecewise
  *	cubic Bezier representation that approximates the points.
+ Ví dụ về cách sử dụng mã khớp đường cong. Đưa ra một mảng các điểm và dung sai (sai số bình phương giữa
+các điểm và đường cong được trang bị), thuật toán sẽ tạo ra một biểu diễn Bezier khối lập phương gần đúng với các điểm.
  *	When a cubic is generated, the routine "DrawBezierCurve"
  *	is called, which outputs the Bezier curve just created
  *	(arguments are the degree and the control points, respectively).
  *	Users will have to implement this function themselves
  *   ascii output, etc.
- *11
+ Khi một khối được tạo, thường trình "DrawBezierCurve" được gọi, sẽ tạo ra đường cong Bezier vừa tạo
+ (các đối số lần lượt là độ và các điểm kiểm soát). Người dùng sẽ phải tự thực hiện chức năng này đầu ra ascii, v.v.
+ *
  */
+void input() {
+	fstream f;
+	f.open("D:/do an/code doancoso/input.txt");
+	f >> n;
+	for (int i = 0; i < n; i++)
+		for (int j = 0; j < n; j++)
+		{
+			f >> a[i][j];
+			if (a[i][j] == 0 || i == j) a[i][j] = INFINITY;
+		}
+	f.close();
+}
 int main()
 {
-	static Point2 d[7] = {	/*  Digitized points */
+	static Point2 d
+		/*    {	/*  Digitized points  : tập hợp điểm*/
 	{ 0.0, 0.0 },
 	{ 0.0, 0.5 },
 	{ 1.1, 1.4 },
@@ -575,8 +594,9 @@ int main()
 	{ 3.2, 1.1 },
 	{ 4.0, 0.2 },
 	{ 4.0, 0.0 },
-	};
-	double	error = 4.0;		/*  Squared error */
-	FitCurve(d, 7, error);		/*  Fit the Bezier curves */
+}; */
+input(d);
+	double	error = 4.0;		/*  Squared error : lỗi bình phương*/
+	FitCurve(d, 7, error);		/*  Fit the Bezier curves :khớp với đường cong bezier */
 }
 #endif						 /* TESTMODE */
